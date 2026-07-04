@@ -215,32 +215,68 @@
       3. WRITE — bin-pack and place every card with absolute left/top.
   */
   function layoutMasonry() {
-    const containerWidth = grid.clientWidth;
-    if (!containerWidth) return;
+    const rawContainerWidth = grid.clientWidth;
+    if (!rawContainerWidth) return;
 
-    const gap = parseFloat(getComputedStyle(grid).getPropertyValue("--grid-gap")) || 24;
+    // Detect if we are on a mobile device
+    const isMobile = window.innerWidth <= 720;
+    const computedStyle = getComputedStyle(grid);
+
+    // Only apply CSS padding offsets on mobile. On desktop, this stays 0.
+    const paddingLeft = isMobile ? (parseFloat(computedStyle.paddingLeft) || 0) : 0;
+    const paddingRight = isMobile ? (parseFloat(computedStyle.paddingRight) || 0) : 0;
+
+    // Usable width for the grid math
+    const containerWidth = rawContainerWidth - paddingLeft - paddingRight;
+    if (containerWidth <= 0) return;
+
+    const gap = parseFloat(computedStyle.getPropertyValue("--grid-gap")) || 24;
     const cols = getColumnCount(containerWidth);
     const colWidth = (containerWidth - gap * (cols - 1)) / cols;
 
     const cards = Array.from(grid.querySelectorAll(".painting-card"));
+    if (cards.length === 0) return;
+
     const spans = cards.map((card) => (card.classList.contains("is-large") ? Math.min(2, cols) : 1));
+
+    // Calculate Hero width (75% desktop, 100% mobile) and center it
+    const heroWidth = !isMobile ? containerWidth * 0.8 : containerWidth;
+    const heroLeft = paddingLeft + (containerWidth - heroWidth) / 2;
 
     // Phase 1 (write): real widths, normal static position.
     cards.forEach((card, i) => {
       card.style.position = "static";
-      card.style.width = colWidth * spans[i] + gap * (spans[i] - 1) + "px";
+      if (i === 0) {
+        card.style.width = heroWidth + "px"; // First item gets Hero width
+      } else {
+        card.style.width = colWidth * spans[i] + gap * (spans[i] - 1) + "px";
+      }
     });
 
     // Phase 2 (read): natural heights at those widths.
     const heights = cards.map((card) => card.getBoundingClientRect().height);
 
-    // Phase 3 (write): bin-pack and place. Large tiles go first, while
-    // columns are still roughly level — placing them in original order
-    // interleaved with small tiles can strand a large tile waiting on
-    // whichever of its two columns is currently taller, leaving the other
-    // column empty in the meantime.
+    // Phase 3 (write): bin-pack and place.
     const colHeights = new Array(cols).fill(0);
-    const placementOrder = cards.map((_, i) => i).sort((a, b) => spans[b] - spans[a]);
+
+    // --- NEW: Place the Hero painting (index 0) first ---
+    const heroCard = cards[0];
+    heroCard.style.position = "absolute";
+    heroCard.style.left = heroLeft + "px";
+    heroCard.style.top = "0px";
+
+    // Push all columns down so the rest of the grid starts below the hero painting
+    const heroBottom = heights[0] + gap;
+    colHeights.fill(heroBottom);
+
+    // --- ORIGINAL LOGIC: Sort and place the rest of the gallery ---
+    // Create an order array for every card EXCEPT the first one
+    const restIndices = [];
+    for (let i = 1; i < cards.length; i++) {
+      restIndices.push(i);
+    }
+    // Sort the remaining cards exactly like your original code (large tiles first)
+    const placementOrder = restIndices.sort((a, b) => spans[b] - spans[a]);
 
     placementOrder.forEach((i) => {
       const card = cards[i];
@@ -257,7 +293,8 @@
       }
 
       card.style.position = "absolute";
-      card.style.left = bestStart * (colWidth + gap) + "px";
+      // Add paddingLeft so mobile clears the edge, but desktop remains exactly as it was
+      card.style.left = paddingLeft + (bestStart * (colWidth + gap)) + "px";
       card.style.top = bestTop + "px";
 
       const bottom = bestTop + heights[i] + gap;

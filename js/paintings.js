@@ -41,14 +41,14 @@ const PAINTINGS = [
   },
   {
     id: "02",
-    title: "\"Crude\"",
-    year: "2021",
+    title: "\"Vicky\"",
+    year: "2025",
     medium: "Acrylic on canvas",
-    dimensions: "122 x  91.5 cm",
+    dimensions: "90 x 65.3 cm",
     status: "available",
     price: "",
     size: "large",
-    image: "paintings/02-Crude.png"
+    image: "paintings/02-Vicky.png"
   },
   {
     id: "03",
@@ -85,14 +85,14 @@ const PAINTINGS = [
   },
   {
     id: "06",
-    title: "\"Vicky\"",
-    year: "2025",
+    title: "\"Crude\"",
+    year: "2021",
     medium: "Acrylic on canvas",
-    dimensions: "90 x 65.3 cm",
+    dimensions: "122 x  91.5 cm",
     status: "available",
     price: "",
     size: "large",
-    image: "paintings/06-Vicky.png"
+    image: "paintings/06-Crude.png"
   },
   {
     id: "07",
